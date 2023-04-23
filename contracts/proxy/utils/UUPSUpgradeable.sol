@@ -7,6 +7,10 @@ import "../../interfaces/draft-IERC1822Upgradeable.sol";
 import "../ERC1967/ERC1967UpgradeUpgradeable.sol";
 import "./Initializable.sol";
 
+error FUNCTION_MUST_BE_CALLED_THROUGH_DELEGATECALL();
+error FUNCTION_MUST_BE_CALLED_THROUGH_ACTIVE_PROXY();
+error UUPS_UPGRADEABLE_MUST_NOT_BE_CALLED_THROUGH_DELEGATECALL();
+
 /**
  * @dev An upgradeability mechanism designed for UUPS proxies. The functions included here can perform an upgrade of an
  * {ERC1967Proxy}, when this contract is set as the implementation behind such a proxy.
@@ -36,8 +40,12 @@ abstract contract UUPSUpgradeable is Initializable, IERC1822ProxiableUpgradeable
      * fail.
      */
     modifier onlyProxy() {
-        require(address(this) != __self, "Function must be called through delegatecall");
-        require(_getImplementation() == __self, "Function must be called through active proxy");
+        if (address(this) == __self) {
+            revert FUNCTION_MUST_BE_CALLED_THROUGH_DELEGATECALL();
+        }
+        if (_getImplementation() != __self) {
+            revert FUNCTION_MUST_BE_CALLED_THROUGH_ACTIVE_PROXY();
+        }
         _;
     }
 
@@ -46,7 +54,9 @@ abstract contract UUPSUpgradeable is Initializable, IERC1822ProxiableUpgradeable
      * callable on the implementing contract but not through proxies.
      */
     modifier notDelegated() {
-        require(address(this) == __self, "UUPSUpgradeable: must not be called through delegatecall");
+        if (address(this) != __self) {
+            revert UUPS_UPGRADEABLE_MUST_NOT_BE_CALLED_THROUGH_DELEGATECALL();
+        }
         _;
     }
 
