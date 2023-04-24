@@ -186,10 +186,8 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         }
 
         address operator = _msgSender();
-        uint256[] memory ids = _asSingletonArray(id);
-        uint256[] memory amounts = _asSingletonArray(amount);
 
-        _beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        _beforeTokenTransfer(operator, from, to, id, amount, data);
 
         uint256 fromBalance = _balances[id][from];
         if (fromBalance < amount) {
@@ -202,7 +200,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         emit TransferSingle(operator, from, to, id, amount);
 
-        _afterTokenTransfer(operator, from, to, ids, amounts, data);
+        _afterTokenTransfer(operator, from, to, id, amount, data);
 
         _doSafeTransferAcceptanceCheck(operator, from, to, id, amount, data);
     }
@@ -233,7 +231,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         address operator = _msgSender();
 
-        _beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        _beforeBatchTokenTransfer(operator, from, to, ids, amounts, data);
 
         for (uint256 i = 0; i < ids.length; ++i) {
             uint256 id = ids[i];
@@ -251,7 +249,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         emit TransferBatch(operator, from, to, ids, amounts);
 
-        _afterTokenTransfer(operator, from, to, ids, amounts, data);
+        _afterBatchTokenTransfer(operator, from, to, ids, amounts, data);
 
         _doSafeBatchTransferAcceptanceCheck(operator, from, to, ids, amounts, data);
     }
@@ -296,15 +294,13 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         }
 
         address operator = _msgSender();
-        uint256[] memory ids = _asSingletonArray(id);
-        uint256[] memory amounts = _asSingletonArray(amount);
 
-        _beforeTokenTransfer(operator, address(0), to, ids, amounts, data);
+        _beforeTokenTransfer(operator, address(0), to, id, amount, data);
 
         _balances[id][to] += amount;
         emit TransferSingle(operator, address(0), to, id, amount);
 
-        _afterTokenTransfer(operator, address(0), to, ids, amounts, data);
+        _afterTokenTransfer(operator, address(0), to, id, amount, data);
 
         _doSafeTransferAcceptanceCheck(operator, address(0), to, id, amount, data);
     }
@@ -336,7 +332,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         address operator = _msgSender();
 
-        _beforeTokenTransfer(operator, address(0), to, ids, amounts, data);
+        _beforeBatchTokenTransfer(operator, address(0), to, ids, amounts, data);
 
         for (uint256 i = 0; i < ids.length; i++) {
             _balances[ids[i]][to] += amounts[i];
@@ -344,7 +340,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         emit TransferBatch(operator, address(0), to, ids, amounts);
 
-        _afterTokenTransfer(operator, address(0), to, ids, amounts, data);
+        _afterBatchTokenTransfer(operator, address(0), to, ids, amounts, data);
 
         _doSafeBatchTransferAcceptanceCheck(operator, address(0), to, ids, amounts, data);
     }
@@ -365,10 +361,8 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         }
 
         address operator = _msgSender();
-        uint256[] memory ids = _asSingletonArray(id);
-        uint256[] memory amounts = _asSingletonArray(amount);
 
-        _beforeTokenTransfer(operator, from, address(0), ids, amounts, "");
+        _beforeTokenTransfer(operator, from, address(0), id, amount, "");
 
         uint256 fromBalance = _balances[id][from];
         if (fromBalance < amount) {
@@ -380,7 +374,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         emit TransferSingle(operator, from, address(0), id, amount);
 
-        _afterTokenTransfer(operator, from, address(0), ids, amounts, "");
+        _afterTokenTransfer(operator, from, address(0), id, amount, "");
     }
 
     /**
@@ -402,7 +396,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         address operator = _msgSender();
 
-        _beforeTokenTransfer(operator, from, address(0), ids, amounts, "");
+        _beforeBatchTokenTransfer(operator, from, address(0), ids, amounts, "");
 
         for (uint256 i = 0; i < ids.length; i++) {
             uint256 id = ids[i];
@@ -419,7 +413,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         emit TransferBatch(operator, from, address(0), ids, amounts);
 
-        _afterTokenTransfer(operator, from, address(0), ids, amounts, "");
+        _afterBatchTokenTransfer(operator, from, address(0), ids, amounts, "");
     }
 
     /**
@@ -455,7 +449,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(
+    function _beforeBatchTokenTransfer(
         address operator,
         address from,
         address to,
@@ -463,6 +457,17 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual {}
+
+
+    function _beforeTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) internal virtual { }
+
 
     /**
      * @dev Hook that is called after any token transfer. This includes minting
@@ -484,12 +489,21 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _afterTokenTransfer(
+    function _afterBatchTokenTransfer(
         address operator,
         address from,
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
+        bytes memory data
+    ) internal virtual {}
+
+    function _afterTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
         bytes memory data
     ) internal virtual {}
 
@@ -535,13 +549,6 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
                 revert ERC1155_TRANSFER_TO_NON_ERC1155RECEIVER_IMPLEMENTER();
             }
         }
-    }
-
-    function _asSingletonArray(uint256 element) private pure returns (uint256[] memory) {
-        uint256[] memory array = new uint256[](1);
-        array[0] = element;
-
-        return array;
     }
 
     /**
