@@ -102,18 +102,20 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
     function balanceOfBatch(
         address[] memory accounts,
         uint256[] memory ids
-    ) public view virtual override returns (uint256[] memory) {
+    ) public view virtual override returns (uint256[] memory batchBalances) {
         if (accounts.length != ids.length) {
             revert ERC1155_ACCOUNTS_AND_IDS_LENGTH_MISMATCH();
         }
 
-        uint256[] memory batchBalances = new uint256[](accounts.length);
+        uint256 numAccounts = accounts.length;
 
-        for (uint256 i = 0; i < accounts.length; ++i) {
-            batchBalances[i] = balanceOf(accounts[i], ids[i]);
+        batchBalances = new uint256[](numAccounts);
+
+        unchecked {
+            for (uint256 i; i < numAccounts; ++i) {
+                batchBalances[i] = balanceOf(accounts[i], ids[i]);
+            }
         }
-
-        return batchBalances;
     }
 
     /**
@@ -233,18 +235,29 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         _beforeBatchTokenTransfer(operator, from, to, ids, amounts, data);
 
-        for (uint256 i = 0; i < ids.length; ++i) {
-            uint256 id = ids[i];
-            uint256 amount = amounts[i];
+        uint256 numIds = ids.length;
+        uint256 id;
+        uint256 amount;
+        uint256 fromBalance;
 
-            uint256 fromBalance = _balances[id][from];
+        for (uint256 i; i < numIds; ) {
+            id = ids[i];
+            amount = amounts[i];
+            fromBalance = _balances[id][from];
+
             if (fromBalance < amount) {
                 revert ERC1155_INSUFFICIENT_BALANCE_FOR_TRANSFER();
             }
+
+            _balances[id][to] += amount;
+
             unchecked {
                 _balances[id][from] = fromBalance - amount;
+
+                ++i;
             }
-            _balances[id][to] += amount;
+
+
         }
 
         emit TransferBatch(operator, from, to, ids, amounts);
@@ -298,6 +311,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         _beforeTokenTransfer(operator, address(0), to, id, amount, data);
 
         _balances[id][to] += amount;
+
         emit TransferSingle(operator, address(0), to, id, amount);
 
         _afterTokenTransfer(operator, address(0), to, id, amount, data);
@@ -326,7 +340,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
             revert ERC1155_MINT_TO_ZERO_ADDRESS();
         }
 
-        if (ids.length != amounts.length) {
+        uint256 numIds = ids.length;
+
+        if (numIds != amounts.length) {
             revert ERC1155_IDS_AND_AMOUNTS_LENGTH_MISMATCH();
         }
 
@@ -334,8 +350,12 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         _beforeBatchTokenTransfer(operator, address(0), to, ids, amounts, data);
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i; i < numIds; ) {
             _balances[ids[i]][to] += amounts[i];
+
+            unchecked {
+                ++i;
+            }
         }
 
         emit TransferBatch(operator, address(0), to, ids, amounts);
@@ -365,6 +385,7 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         _beforeTokenTransfer(operator, from, address(0), id, amount, "");
 
         uint256 fromBalance = _balances[id][from];
+
         if (fromBalance < amount) {
             revert ERC1155_BURN_AMOUNT_EXCEEDS_BALANCE();
         }
@@ -390,7 +411,10 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         if (from == address(0)) {
             revert ERC1155_BURN_FROM_ZERO_ADDRESS();
         }
-        if (ids.length != amounts.length) {
+
+        uint256 numIds = ids.length;
+
+        if (numIds != amounts.length) {
             revert ERC1155_IDS_AND_AMOUNTS_LENGTH_MISMATCH();
         }
 
@@ -398,16 +422,23 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         _beforeBatchTokenTransfer(operator, from, address(0), ids, amounts, "");
 
-        for (uint256 i = 0; i < ids.length; i++) {
-            uint256 id = ids[i];
-            uint256 amount = amounts[i];
+        uint256 id;
+        uint256 amount;
+        uint256 fromBalance;
+        for (uint256 i; i < numIds; ) {
+            id = ids[i];
+            amount = amounts[i];
 
-            uint256 fromBalance = _balances[id][from];
+            fromBalance = _balances[id][from];
+
             if (fromBalance < amount) {
                 revert ERC1155_BURN_AMOUNT_EXCEEDS_BALANCE();
             }
+
             unchecked {
                 _balances[id][from] = fromBalance - amount;
+
+                ++i;
             }
         }
 
