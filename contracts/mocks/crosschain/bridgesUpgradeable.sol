@@ -24,7 +24,7 @@ abstract contract BaseRelayMockUpgradeable is Initializable {
         _currentSender = sender;
 
         (bool success, bytes memory returndata) = target.call(data);
-        AddressUpgradeable.verifyCallResultFromTarget(target, success, returndata, "low-level call reverted");
+        AddressUpgradeable.verifyCallResultFromTarget(target, success, returndata);
 
         _currentSender = previousSender;
     }

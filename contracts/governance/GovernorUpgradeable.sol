@@ -341,10 +341,9 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
         bytes[] memory calldatas,
         bytes32 /*descriptionHash*/
     ) internal virtual {
-        string memory errorMessage = "Governor: call reverted without message";
         for (uint256 i = 0; i < targets.length; ++i) {
             (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
-            AddressUpgradeable.verifyCallResult(success, returndata, errorMessage);
+            AddressUpgradeable.verifyCallResult(success, returndata);
         }
     }
 
@@ -572,7 +571,7 @@ abstract contract GovernorUpgradeable is Initializable, ContextUpgradeable, ERC1
      */
     function relay(address target, uint256 value, bytes calldata data) external payable virtual onlyGovernance {
         (bool success, bytes memory returndata) = target.call{value: value}(data);
-        AddressUpgradeable.verifyCallResult(success, returndata, "Governor: relay reverted without message");
+        AddressUpgradeable.verifyCallResult(success, returndata);
     }
 
     /**

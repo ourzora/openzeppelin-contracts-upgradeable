@@ -111,7 +111,7 @@ contract ERC1155PresetMinterPauserUpgradeable is Initializable, ContextUpgradeab
         return super.supportsInterface(interfaceId);
     }
 
-    function _beforeTokenTransfer(
+    function _beforeBatchTokenTransfer(
         address operator,
         address from,
         address to,
@@ -119,7 +119,7 @@ contract ERC1155PresetMinterPauserUpgradeable is Initializable, ContextUpgradeab
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override(ERC1155Upgradeable, ERC1155PausableUpgradeable) {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        super._beforeBatchTokenTransfer(operator, from, to, ids, amounts, data);
     }
 
     /**
