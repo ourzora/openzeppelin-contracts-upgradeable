@@ -11,6 +11,19 @@ import "../../utils/ContextUpgradeable.sol";
 import "../../utils/introspection/ERC165Upgradeable.sol";
 import "../../proxy/utils/Initializable.sol";
 
+error ERC1155_ADDRESS_ZERO_IS_NOT_A_VALID_OWNER();
+error ERC1155_ACCOUNTS_AND_IDS_LENGTH_MISMATCH();
+error ERC1155_IDS_AND_AMOUNTS_LENGTH_MISMATCH();
+error ERC1155_CALLER_IS_NOT_TOKEN_OWNER_OR_APPROVED();
+error ERC1155_TRANSFER_TO_ZERO_ADDRESS();
+error ERC1155_INSUFFICIENT_BALANCE_FOR_TRANSFER();
+error ERC1155_MINT_TO_ZERO_ADDRESS();
+error ERC1155_BURN_FROM_ZERO_ADDRESS();
+error ERC1155_BURN_AMOUNT_EXCEEDS_BALANCE();
+error ERC1155_SETTING_APPROVAL_FOR_SELF();
+error ERC1155_ERC1155RECEIVER_REJECTED_TOKENS();
+error ERC1155_TRANSFER_TO_NON_ERC1155RECEIVER_IMPLEMENTER();
+
 /**
  * @dev Implementation of the basic standard multi-token.
  * See https://eips.ethereum.org/EIPS/eip-1155
@@ -73,7 +86,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      * - `account` cannot be the zero address.
      */
     function balanceOf(address account, uint256 id) public view virtual override returns (uint256) {
-        require(account != address(0), "ERC1155: address zero is not a valid owner");
+        if (account == address(0)) {
+            revert ERC1155_ADDRESS_ZERO_IS_NOT_A_VALID_OWNER();
+        }
         return _balances[id][account];
     }
 
@@ -88,7 +103,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         address[] memory accounts,
         uint256[] memory ids
     ) public view virtual override returns (uint256[] memory) {
-        require(accounts.length == ids.length, "ERC1155: accounts and ids length mismatch");
+        if (accounts.length != ids.length) {
+            revert ERC1155_ACCOUNTS_AND_IDS_LENGTH_MISMATCH();
+        }
 
         uint256[] memory batchBalances = new uint256[](accounts.length);
 
@@ -123,10 +140,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256 amount,
         bytes memory data
     ) public virtual override {
-        require(
-            from == _msgSender() || isApprovedForAll(from, _msgSender()),
-            "ERC1155: caller is not token owner or approved"
-        );
+        if (from != _msgSender() && !isApprovedForAll(from, _msgSender())) {
+            revert ERC1155_CALLER_IS_NOT_TOKEN_OWNER_OR_APPROVED();
+        }
         _safeTransferFrom(from, to, id, amount, data);
     }
 
@@ -140,10 +156,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256[] memory amounts,
         bytes memory data
     ) public virtual override {
-        require(
-            from == _msgSender() || isApprovedForAll(from, _msgSender()),
-            "ERC1155: caller is not token owner or approved"
-        );
+        if (from != _msgSender() && !isApprovedForAll(from, _msgSender())) {
+            revert ERC1155_CALLER_IS_NOT_TOKEN_OWNER_OR_APPROVED();
+        }
         _safeBatchTransferFrom(from, to, ids, amounts, data);
     }
 
@@ -166,7 +181,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256 amount,
         bytes memory data
     ) internal virtual {
-        require(to != address(0), "ERC1155: transfer to the zero address");
+        if (to == address(0)) {
+            revert ERC1155_TRANSFER_TO_ZERO_ADDRESS();
+        }
 
         address operator = _msgSender();
         uint256[] memory ids = _asSingletonArray(id);
@@ -175,7 +192,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         _beforeTokenTransfer(operator, from, to, ids, amounts, data);
 
         uint256 fromBalance = _balances[id][from];
-        require(fromBalance >= amount, "ERC1155: insufficient balance for transfer");
+        if (fromBalance < amount) {
+            revert ERC1155_INSUFFICIENT_BALANCE_FOR_TRANSFER();
+        }
         unchecked {
             _balances[id][from] = fromBalance - amount;
         }
@@ -205,8 +224,12 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual {
-        require(ids.length == amounts.length, "ERC1155: ids and amounts length mismatch");
-        require(to != address(0), "ERC1155: transfer to the zero address");
+        if (ids.length != amounts.length) {
+            revert ERC1155_ACCOUNTS_AND_IDS_LENGTH_MISMATCH();
+        }
+        if (to == address(0)) {
+            revert ERC1155_TRANSFER_TO_ZERO_ADDRESS();
+        }
 
         address operator = _msgSender();
 
@@ -217,7 +240,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
             uint256 amount = amounts[i];
 
             uint256 fromBalance = _balances[id][from];
-            require(fromBalance >= amount, "ERC1155: insufficient balance for transfer");
+            if (fromBalance < amount) {
+                revert ERC1155_INSUFFICIENT_BALANCE_FOR_TRANSFER();
+            }
             unchecked {
                 _balances[id][from] = fromBalance - amount;
             }
@@ -266,7 +291,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      * acceptance magic value.
      */
     function _mint(address to, uint256 id, uint256 amount, bytes memory data) internal virtual {
-        require(to != address(0), "ERC1155: mint to the zero address");
+        if (to == address(0)) {
+            revert ERC1155_MINT_TO_ZERO_ADDRESS();
+        }
 
         address operator = _msgSender();
         uint256[] memory ids = _asSingletonArray(id);
@@ -299,8 +326,13 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual {
-        require(to != address(0), "ERC1155: mint to the zero address");
-        require(ids.length == amounts.length, "ERC1155: ids and amounts length mismatch");
+        if (to == address(0)) {
+            revert ERC1155_MINT_TO_ZERO_ADDRESS();
+        }
+
+        if (ids.length != amounts.length) {
+            revert ERC1155_IDS_AND_AMOUNTS_LENGTH_MISMATCH();
+        }
 
         address operator = _msgSender();
 
@@ -328,7 +360,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      * - `from` must have at least `amount` tokens of token type `id`.
      */
     function _burn(address from, uint256 id, uint256 amount) internal virtual {
-        require(from != address(0), "ERC1155: burn from the zero address");
+        if (from == address(0)) {
+            revert ERC1155_BURN_FROM_ZERO_ADDRESS();
+        }
 
         address operator = _msgSender();
         uint256[] memory ids = _asSingletonArray(id);
@@ -337,7 +371,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         _beforeTokenTransfer(operator, from, address(0), ids, amounts, "");
 
         uint256 fromBalance = _balances[id][from];
-        require(fromBalance >= amount, "ERC1155: burn amount exceeds balance");
+        if (fromBalance < amount) {
+            revert ERC1155_BURN_AMOUNT_EXCEEDS_BALANCE();
+        }
         unchecked {
             _balances[id][from] = fromBalance - amount;
         }
@@ -357,8 +393,12 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      * - `ids` and `amounts` must have the same length.
      */
     function _burnBatch(address from, uint256[] memory ids, uint256[] memory amounts) internal virtual {
-        require(from != address(0), "ERC1155: burn from the zero address");
-        require(ids.length == amounts.length, "ERC1155: ids and amounts length mismatch");
+        if (from == address(0)) {
+            revert ERC1155_BURN_FROM_ZERO_ADDRESS();
+        }
+        if (ids.length != amounts.length) {
+            revert ERC1155_IDS_AND_AMOUNTS_LENGTH_MISMATCH();
+        }
 
         address operator = _msgSender();
 
@@ -369,7 +409,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
             uint256 amount = amounts[i];
 
             uint256 fromBalance = _balances[id][from];
-            require(fromBalance >= amount, "ERC1155: burn amount exceeds balance");
+            if (fromBalance < amount) {
+                revert ERC1155_BURN_AMOUNT_EXCEEDS_BALANCE();
+            }
             unchecked {
                 _balances[id][from] = fromBalance - amount;
             }
@@ -386,7 +428,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
      * Emits an {ApprovalForAll} event.
      */
     function _setApprovalForAll(address owner, address operator, bool approved) internal virtual {
-        require(owner != operator, "ERC1155: setting approval status for self");
+        if (owner == operator) {
+            revert ERC1155_SETTING_APPROVAL_FOR_SELF();
+        }
         _operatorApprovals[owner][operator] = approved;
         emit ApprovalForAll(owner, operator, approved);
     }
@@ -460,12 +504,12 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         if (to.isContract()) {
             try IERC1155ReceiverUpgradeable(to).onERC1155Received(operator, from, id, amount, data) returns (bytes4 response) {
                 if (response != IERC1155ReceiverUpgradeable.onERC1155Received.selector) {
-                    revert("ERC1155: ERC1155Receiver rejected tokens");
+                    revert ERC1155_ERC1155RECEIVER_REJECTED_TOKENS();
                 }
             } catch Error(string memory reason) {
                 revert(reason);
             } catch {
-                revert("ERC1155: transfer to non-ERC1155Receiver implementer");
+                revert ERC1155_TRANSFER_TO_NON_ERC1155RECEIVER_IMPLEMENTER();
             }
         }
     }
@@ -483,12 +527,12 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
                 bytes4 response
             ) {
                 if (response != IERC1155ReceiverUpgradeable.onERC1155BatchReceived.selector) {
-                    revert("ERC1155: ERC1155Receiver rejected tokens");
+                    revert ERC1155_ERC1155RECEIVER_REJECTED_TOKENS();
                 }
             } catch Error(string memory reason) {
                 revert(reason);
             } catch {
-                revert("ERC1155: transfer to non-ERC1155Receiver implementer");
+                revert ERC1155_TRANSFER_TO_NON_ERC1155RECEIVER_IMPLEMENTER();
             }
         }
     }
