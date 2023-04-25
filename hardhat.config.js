@@ -71,7 +71,7 @@ module.exports = {
         enabled: withOptimizations,
         runs: 500000,
       },
-      viaIR: true,
+      // viaIR: true,
       outputSelection: { '*': { '*': ['storageLayout'] } },
     },
   },
