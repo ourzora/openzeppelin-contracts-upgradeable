@@ -69,9 +69,9 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: withOptimizations,
-        runs: 200,
+        runs: 500000,
       },
-      viaIR: withOptimizations && argv.ir,
+      viaIR: true,
       outputSelection: { '*': { '*': ['storageLayout'] } },
     },
   },
