@@ -36,7 +36,7 @@ abstract contract ERC1155PausableUpgradeable is Initializable, ERC1155Upgradeabl
      *
      * - the contract must not be paused.
      */
-    function _beforeTokenTransfer(
+    function _beforeBatchTokenTransfer(
         address operator,
         address from,
         address to,
@@ -44,7 +44,7 @@ abstract contract ERC1155PausableUpgradeable is Initializable, ERC1155Upgradeabl
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        super._beforeBatchTokenTransfer(operator, from, to, ids, amounts, data);
 
         require(!paused(), "ERC1155Pausable: token transfer while paused");
     }

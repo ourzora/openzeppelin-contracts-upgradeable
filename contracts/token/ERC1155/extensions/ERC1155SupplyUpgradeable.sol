@@ -39,7 +39,7 @@ abstract contract ERC1155SupplyUpgradeable is Initializable, ERC1155Upgradeable 
     /**
      * @dev See {ERC1155-_beforeTokenTransfer}.
      */
-    function _beforeTokenTransfer(
+    function _beforeBatchTokenTransfer(
         address operator,
         address from,
         address to,
@@ -47,7 +47,7 @@ abstract contract ERC1155SupplyUpgradeable is Initializable, ERC1155Upgradeable 
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual override {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        super._beforeBatchTokenTransfer(operator, from, to, ids, amounts, data);
 
         if (from == address(0)) {
             for (uint256 i = 0; i < ids.length; ++i) {

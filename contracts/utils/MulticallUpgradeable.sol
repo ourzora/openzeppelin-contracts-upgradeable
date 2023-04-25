@@ -40,7 +40,7 @@ abstract contract MulticallUpgradeable is Initializable {
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.delegatecall(data);
-        return AddressUpgradeable.verifyCallResult(success, returndata, "Address: low-level delegate call failed");
+        return AddressUpgradeable.verifyCallResult(success, returndata);
     }
 
     /**
