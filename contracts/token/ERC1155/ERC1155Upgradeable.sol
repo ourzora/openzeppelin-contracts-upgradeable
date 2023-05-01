@@ -103,11 +103,11 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         address[] memory accounts,
         uint256[] memory ids
     ) public view virtual override returns (uint256[] memory batchBalances) {
-        if (accounts.length != ids.length) {
+        uint256 numAccounts = accounts.length;
+
+        if (numAccounts != ids.length) {
             revert ERC1155_ACCOUNTS_AND_IDS_LENGTH_MISMATCH();
         }
-
-        uint256 numAccounts = accounts.length;
 
         batchBalances = new uint256[](numAccounts);
 
@@ -224,7 +224,9 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
         uint256[] memory amounts,
         bytes memory data
     ) internal virtual {
-        if (ids.length != amounts.length) {
+        uint256 numIds = ids.length;
+
+        if (numIds != amounts.length) {
             revert ERC1155_ACCOUNTS_AND_IDS_LENGTH_MISMATCH();
         }
         if (to == address(0)) {
@@ -235,7 +237,6 @@ contract ERC1155Upgradeable is Initializable, ContextUpgradeable, ERC165Upgradea
 
         _beforeBatchTokenTransfer(operator, from, to, ids, amounts, data);
 
-        uint256 numIds = ids.length;
         uint256 id;
         uint256 amount;
         uint256 fromBalance;
